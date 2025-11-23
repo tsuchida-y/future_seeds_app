@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // spotsコレクション（スポット情報）
+    match /spots/{spotId} {
+      // 読み取りは全ユーザーに許可
+      allow read: if true;
+      
+      // 書き込みは管理者のみ（実装時にユーザー認証を追加）
+      allow write: if false; // TODO: 管理者認証の実装
+    }
+    
+    // newsコレクション（お知らせ・活動報告）
+    match /news/{newsId} {
+      // 読み取りは全ユーザーに許可
+      allow read: if true;
+      
+      // 書き込みは管理者のみ（実装時にユーザー認証を追加）
+      allow write: if false; // TODO: 管理者認証の実装
+    }
+    
+    // 今後追加予定: usersコレクション（ユーザー情報）
+    // match /users/{userId} {
+    //   allow read, write: if request.auth != null && request.auth.uid == userId;
+    // }
+  }
+}
