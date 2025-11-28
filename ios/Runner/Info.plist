@@ -56,5 +56,23 @@
 	<!-- フォトライブラリ（将来的な機能追加用） -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>写真を選択するためにフォトライブラリへのアクセスを許可してください</string>
+	<!-- PayPayアプリ起動のためのスキーム許可 -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>paypay</string>
+    </array>
+	    <!-- アプリ戻り用URL Scheme -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>futureseeds.donation</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>futureseeds</string>
+            </array>
+        </dict>
+    </array>
+	
 </dict>
 </plist>

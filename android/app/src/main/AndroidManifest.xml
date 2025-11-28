@@ -2,8 +2,13 @@
     <!-- 位置情報のパーミッション -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- インターネット接続 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- URL起動権限 -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" 
+        tools:ignore="QueryAllPackagesPermission" />
     
     <application
         android:label="Future Seeds"
