@@ -6,6 +6,7 @@ import 'screens/map_screen.dart';
 import 'screens/news_screen.dart';
 import 'screens/donation_screen.dart';
 import 'services/notification_service.dart';
+import 'firebase_options.dart';
 import 'dart:io' show Platform;
 
 void main() async {
@@ -15,16 +16,30 @@ void main() async {
   await dotenv.load(fileName: ".env");
 
   // Firebaseの初期化
-  await Firebase.initializeApp();
+  try {
+    debugPrint('App: Firebase初期化中...');
+    await Firebase.initializeApp(
+       options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('App: Firebase初期化成功');
+  } catch (e) {
+    debugPrint('App: エラー - Firebase初期化失敗: $e');
+  }
   
   // プッシュ通知の初期化
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-  await notificationService.subscribeToTopic('all_users');
+  try {
+    debugPrint('App: プッシュ通知初期化中...');
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    await notificationService.subscribeToTopic('all_users');
+    debugPrint('App: プッシュ通知初期化成功');
+  } catch (e) {
+    debugPrint('App: エラー - プッシュ通知初期化失敗: $e');
+  }
 
   // iOS用: Google Maps APIキーを設定
   if (Platform.isIOS) {
-    const platform = MethodChannel('com.futureseeds.app/config');
+    const platform = MethodChannel('com.example.future_seeds_app/config');
     try {
       await platform.invokeMethod('getGoogleMapsApiKey', {
         'apiKey': dotenv.env['GOOGLE_MAPS_IOS_API_KEY'] ?? '',

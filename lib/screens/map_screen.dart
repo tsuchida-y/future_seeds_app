@@ -23,12 +23,18 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('===== MapScreen: 初期化開始 =====');
     _requestLocationPermission();
     _loadSpots();
   }
 
   Future<void> _requestLocationPermission() async {
+    debugPrint('MapScreen: 位置情報パーミッション要求中...');
+    //パーミッション要求
     final status = await Permission.location.request();
+    debugPrint('MapScreen: パーミッション結果 = $status');
+
+    //許可された場合、現在地を取得
     if (status.isGranted) {
       _getCurrentLocation();
     }
@@ -36,12 +42,19 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
+      debugPrint('MapScreen: 現在地取得中...');
+      //端末の位置情報を取得
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+      debugPrint('MapScreen: 現在地取得成功 - 緯度: ${position.latitude}, 経度: ${position.longitude}');
+
       setState(() {
         _currentPosition = position;
       });
+
+      //地図のカメラを現在地に移動
+      debugPrint('MapScreen: カメラを現在地に移動中...');
       _mapController?.animateCamera(
         CameraUpdate.newLatLng(
           LatLng(position.latitude, position.longitude),
@@ -53,16 +66,24 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _loadSpots() {
+    debugPrint('MapScreen: Firestoreからスポットデータ取得開始...');
+    // Firestoreからspotsデータを取得してマーカーを更新
     _spotService.getSpots().listen((spots) {
+      debugPrint('MapScreen: スポットデータ受信 - ${spots.length}件');
+      //データ受信時のコールバック
       setState(() {
         _spots = spots;
-        _updateMarkers();
+        _updateMarkers();//マーカー更新
       });
     });
   }
 
   void _updateMarkers() {
+    debugPrint('MapScreen: マーカー更新開始 - ${_spots.length}個のスポットをマーカーに変換');
+    //マーカーを生成
     _markers.clear();
+
+    //各スポットに対してマーカーを追加
     for (var spot in _spots) {
       _markers.add(
         Marker(
@@ -73,6 +94,7 @@ class _MapScreenState extends State<MapScreen> {
             snippet: spot.typeLabel,
             onTap: () => _showSpotDetail(spot),
           ),
+          //タイプ別にアイコンを変更
           icon: _getMarkerIcon(spot.type),
         ),
       );
@@ -274,15 +296,21 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('MapScreen: 画面を描画中... (マーカー数: ${_markers.length})');
     return Scaffold(
       body: Stack(
         children: [
           GoogleMap(
+            //マップ作成時のコールバック
             onMapCreated: (controller) => _mapController = controller,
+
+            //初期カメラ位置(岩手県盛岡市中心)
             initialCameraPosition: const CameraPosition(
-              target: LatLng(35.6762, 139.6503), // 東京の座標
-              zoom: 12,
+              target: LatLng(39.7036, 141.1527),
+              zoom: 13,
             ),
+
+            //生成したマーカーを表示
             markers: _markers,
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
