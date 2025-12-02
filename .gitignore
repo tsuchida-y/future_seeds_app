@@ -12,6 +12,7 @@
 .swiftpm/
 migrate_working_dir/
 ios/Runner/Info.plist
+ios/GoogleService-Info.plist
 # IntelliJ related
 *.iml
 *.ipr
