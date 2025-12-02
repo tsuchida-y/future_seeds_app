@@ -45,22 +45,29 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
 	<!-- 位置情報のパーミッション -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>現在地から近くの支援スポットを表示するために位置情報を使用します</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>位置情報を使用して、お近くの支援スポットをお知らせします</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>現在地を取得して近くの支援スポットを表示するために位置情報を使用します。</string>
+
 	<!-- カメラ（将来的な機能追加用） -->
 	<key>NSCameraUsageDescription</key>
 	<string>寄付した食品の写真を撮影するためにカメラを使用します</string>
+
 	<!-- フォトライブラリ（将来的な機能追加用） -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>写真を選択するためにフォトライブラリへのアクセスを許可してください</string>
+
 	<!-- PayPayアプリ起動のためのスキーム許可 -->
     <key>LSApplicationQueriesSchemes</key>
     <array>
         <string>paypay</string>
     </array>
+
 	    <!-- アプリ戻り用URL Scheme -->
     <key>CFBundleURLTypes</key>
     <array>
@@ -72,6 +79,12 @@
                 <string>futureseeds</string>
             </array>
         </dict>
+    </array>
+
+    <!-- プッシュ通知設定 -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
     </array>
 	
 </dict>
