@@ -19,8 +19,7 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      debugPrint('User granted permission');
-      print('通知権限が許可されました');
+      debugPrint('通知権限が許可されました');
 
       // iOS用の追加設定
       if (Platform.isIOS) {

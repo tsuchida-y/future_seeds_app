@@ -1,19 +1,41 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; 
 import 'screens/map_screen.dart';
 import 'screens/news_screen.dart';
 import 'screens/donation_screen.dart';
 import 'services/notification_service.dart';
 import 'firebase_options.dart';
-import 'dart:io' show Platform;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // .envファイルを読み込み
   await dotenv.load(fileName: ".env");
+
+  // iOS用: Google Maps APIキーをネイティブ側に送信
+  if (Platform.isIOS) {
+    try {
+      debugPrint('App: iOS用Google Maps APIキー設定中...');
+      //通信チャンネルの作成(ネイティブとの通信用の橋)
+      const platform = MethodChannel('com.futureseeds.app/config');
+      final apiKey = dotenv.env['GOOGLE_MAPS_IOS_API_KEY'] ?? '';
+      
+      if (apiKey.isNotEmpty) {
+        //Dartからネイティブ側にAPIキーを送信
+        //invokeMethod(ネイティブで使用するメソッド,送信するデータ)
+        await platform.invokeMethod('getGoogleMapsApiKey', {'apiKey': apiKey});
+        debugPrint('App: iOS用APIキー設定完了');
+      } else {
+        debugPrint('App: 警告 - iOS用APIキーが.envに設定されていません');
+      }
+    } catch (e) {
+      debugPrint('App: エラー - iOS用APIキー設定失敗: $e');
+    }
+  }
 
   // Firebaseの初期化
   try {
@@ -35,18 +57,6 @@ void main() async {
     debugPrint('App: プッシュ通知初期化成功');
   } catch (e) {
     debugPrint('App: エラー - プッシュ通知初期化失敗: $e');
-  }
-
-  // iOS用: Google Maps APIキーを設定
-  if (Platform.isIOS) {
-    const platform = MethodChannel('com.example.future_seeds_app/config');
-    try {
-      await platform.invokeMethod('getGoogleMapsApiKey', {
-        'apiKey': dotenv.env['GOOGLE_MAPS_IOS_API_KEY'] ?? '',
-      });
-    } catch (e) {
-      debugPrint('Error setting iOS Maps API key: $e');
-    }
   }
   
   runApp(const FutureSeedsApp());
