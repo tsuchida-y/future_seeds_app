@@ -130,7 +130,7 @@ class _DonationScreenState extends State<DonationScreen> {
             crossAxisCount: 2,      // 2列表示
             crossAxisSpacing: 12,   // 列間隔
             mainAxisSpacing: 12,    // 行間隔
-            childAspectRatio: 3.0,  // 幅：高さ比
+            childAspectRatio: 2.9,  // 幅：高さ比
           ),
           itemCount: _donationAmounts.length,
           itemBuilder: (context, index) {
