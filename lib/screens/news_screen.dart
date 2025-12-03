@@ -66,103 +66,84 @@ class _NewsScreenState extends State<NewsScreen> {
       child: InkWell(
         onTap: () => _showNewsDetail(news),
         borderRadius: BorderRadius.circular(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 画像
-            if (news.imageUrl != null)
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-                child: Image.network(
-                  news.imageUrl!,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 緊急タグ
-                  if (news.isUrgent)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        '緊急募集',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  if (news.isUrgent) const SizedBox(height: 8),
-
-                  // タイトル
-                  Text(
-                    news.title,
-                    style: const TextStyle(
-                      fontSize: 18,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 緊急タグ
+              if (news.isUrgent)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    '緊急募集',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                ),
+              if (news.isUrgent) const SizedBox(height: 8),
 
-                  // 日付
-                  Text(
-                    DateFormat('yyyy年MM月dd日').format(news.publishedAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // 内容のプレビュー
-                  Text(
-                    news.content,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-
-                  // 募集している食品
-                  if (news.neededItems != null &&
-                      news.neededItems!.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: news.neededItems!
-                          .take(3)
-                          .map((item) => Chip(
-                                label: Text(item),
-                                backgroundColor: Colors.green[50],
-                                labelStyle: const TextStyle(fontSize: 12),
-                                visualDensity: VisualDensity.compact,
-                              ))
-                          .toList(),
-                    ),
-                  ],
-                ],
+              // タイトル
+              Text(
+                news.title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+
+              // 日付
+              Text(
+                DateFormat('yyyy年MM月dd日').format(news.publishedAt),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 内容のプレビュー
+              Text(
+                news.content,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[800],
+                ),
+              ),
+
+              // 募集している食品
+              if (news.neededItems != null &&
+                  news.neededItems!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: news.neededItems!
+                      .take(3)
+                      .map((item) => Chip(
+                            label: Text(item),
+                            backgroundColor: Colors.green[50],
+                            labelStyle: const TextStyle(fontSize: 12),
+                            visualDensity: VisualDensity.compact,
+                          ))
+                      .toList(),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -199,18 +180,6 @@ class _NewsScreenState extends State<NewsScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // 画像
-                if (news.imageUrl != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      news.imageUrl!,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                const SizedBox(height: 16),
 
                 // 緊急タグ
                 if (news.isUrgent)
