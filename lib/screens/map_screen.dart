@@ -19,7 +19,6 @@ class _MapScreenState extends State<MapScreen> {
   final SpotService _spotService = SpotService();
   final Set<Marker> _markers = {};
   List<Spot> _spots = [];
-  Spot? _selectedSpot; // 選択されたスポット
 
   @override
   void initState() {
@@ -83,19 +82,8 @@ class _MapScreenState extends State<MapScreen> {
           markerId: MarkerId(spot.id),
           position: LatLng(spot.latitude, spot.longitude),
           icon: _getMarkerIcon(spot.type),
-          // infoWindowは使用せず、タップイベントで詳細を表示
-          onTap: () {
-            setState(() {
-              _selectedSpot = spot;
-            });
-            // カメラを選択されたマーカーに移動
-            _mapController?.animateCamera(
-              CameraUpdate.newLatLngZoom(
-                LatLng(spot.latitude, spot.longitude),
-                15,
-              ),
-            );
-          },
+          // タップ時にBottomSheetを表示
+          onTap: () => _showSpotBottomSheet(spot),
         ),
       );
     }
@@ -149,282 +137,315 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  // ピンタップ時に表示するBottomSheet
+  void _showSpotBottomSheet(Spot spot) {
+    // カメラを選択されたマーカーに移動
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(
+        LatLng(spot.latitude, spot.longitude),
+        15,
+      ),
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildSpotBottomSheet(spot),
+    );
+  }
+
+  // BottomSheetのコンテンツ（簡易版）
+  Widget _buildSpotBottomSheet(Spot spot) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.4,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ハンドルバー
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 画像
+                    if (spot.imageUrl != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          spot.imageUrl!,
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 180,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.broken_image,
+                                size: 64,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    
+                    const SizedBox(height: 16),
+
+                    // タイトル行（名前とタイプバッジ） - 縦並び
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          spot.name,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getTypeColor(spot.type),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            spot.typeLabel,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 距離と営業状態
+                    Row(
+                      children: [
+                        Icon(Icons.route, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          _calculateDistance(spot),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Icon(Icons.access_time, size: 16, color: Colors.green),
+                        const SizedBox(width: 4),
+                        Text(
+                          '営業中',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 住所
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.location_on, size: 18, color: Colors.grey[600]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            spot.address,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // 営業時間
+                    Row(
+                      children: [
+                        Icon(Icons.schedule, size: 18, color: Colors.grey[600]),
+                        const SizedBox(width: 8),
+                        Text(
+                          spot.openingHours,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // 募集している食品（最大3つまで表示）
+                    if (spot.neededItems.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(Icons.inventory_2, size: 18, color: Colors.grey[600]),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: spot.neededItems
+                                  .take(3)
+                                  .map((item) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green[50],
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: Colors.green[200]!,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          item,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.green[800],
+                                          ),
+                                        ),
+                                      ))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // アクションボタン
+                    Row(
+                      children: [
+                        // ルート案内ボタン
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _openMapsApp(spot);
+                            },
+                            icon: const Icon(Icons.directions, size: 20),
+                            label: const Text(
+                              'ルート案内',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        // 詳細ボタン
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context); // 現在のBottomSheetを閉じる
+                              _showFullSpotDetail(spot); // 詳細画面を表示
+                            },
+                            icon: const Icon(Icons.info_outline, size: 20),
+                            label: const Text(
+                              '詳細を見る',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: const BorderSide(color: Colors.blue, width: 2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint('MapScreen: 画面を描画中... (マーカー数: ${_markers.length})');
     return Scaffold(
-      body: Stack(
-        children: [
-          GoogleMap(
-            onMapCreated: (controller) => _mapController = controller,
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(39.7036, 141.1527),
-              zoom: 13,
-            ),
-            markers: _markers,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            compassEnabled: true,
-            mapToolbarEnabled: false,
-            // 地図タップで選択解除
-            onTap: (_) {
-              setState(() {
-                _selectedSpot = null;
-              });
-            },
-          ),
-          
-          // Google Mapsスタイルの情報カード
-          if (_selectedSpot != null)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 100,
-              child: _buildSpotInfoCard(_selectedSpot!),
-            ),
-        ],
+      body: GoogleMap(
+        onMapCreated: (controller) => _mapController = controller,
+        initialCameraPosition: const CameraPosition(
+          target: LatLng(39.7036, 141.1527),
+          zoom: 13,
+        ),
+        markers: _markers,
+        myLocationEnabled: true,
+        myLocationButtonEnabled: true,
+        compassEnabled: true,
+        mapToolbarEnabled: false,
       ),
     );
   }
 
-  Widget _buildSpotInfoCard(Spot spot) {
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 画像部分
-          if (spot.imageUrl != null)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              child: Image.network(
-                spot.imageUrl!,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 160,
-                    color: Colors.grey[300],
-                    child: const Icon(
-                      Icons.broken_image,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                  );
-                },
-              ),
-            ),
-          
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // タイトル行（名前とタイプバッジ）
-                Column(  // ← Rowから変更
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      spot.name,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),  // ← widthからheightに変更
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getTypeColor(spot.type),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        spot.typeLabel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // 距離と営業状態
-                Row(
-                  children: [
-                    Icon(Icons.route, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      _calculateDistance(spot),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.access_time, size: 16, color: Colors.green),
-                    const SizedBox(width: 4),
-                    Text(
-                      '営業中',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.green[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // 住所
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.location_on, size: 18, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        spot.address,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 8),
-                
-                // 営業時間
-                Row(
-                  children: [
-                    Icon(Icons.schedule, size: 18, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
-                    Text(
-                      spot.openingHours,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                  ],
-                ),
-                
-                // 募集している食品（最大3つまで表示）
-                if (spot.neededItems.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(Icons.inventory_2, size: 18, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: spot.neededItems
-                              .take(3)
-                              .map((item) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green[50],
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: Colors.green[200]!,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      item,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.green[800],
-                                      ),
-                                    ),
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                
-                const SizedBox(height: 16),
-                
-                // アクションボタン
-                Row(
-                  children: [
-                    // ルート案内ボタン
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _openMapsApp(spot),
-                        icon: const Icon(Icons.directions, size: 20),
-                        label: const Text(
-                          'ルート案内',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(width: 12),
-                    
-                    // 詳細ボタン
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _showFullSpotDetail(spot),
-                        icon: const Icon(Icons.info_outline, size: 20),
-                        label: const Text(
-                          '詳細を見る',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: const BorderSide(color: Colors.blue, width: 2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // 詳細画面（フルバージョン）
   void _showFullSpotDetail(Spot spot) {
     showModalBottomSheet(
       context: context,
