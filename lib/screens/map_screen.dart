@@ -1,4 +1,6 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -19,13 +21,99 @@ class _MapScreenState extends State<MapScreen> {
   final SpotService _spotService = SpotService();
   final Set<Marker> _markers = {};
   List<Spot> _spots = [];
+  
+  // カスタムマーカーアイコン
+  BitmapDescriptor? _communityFridgeIcon;
+  BitmapDescriptor? _foodCollectionBoxIcon;
+  BitmapDescriptor? _donationBoxIcon;
 
   @override
   void initState() {
     super.initState();
     debugPrint('===== MapScreen: 初期化開始 =====');
+    _loadCustomMarkers();
     _requestLocationPermission();
     _loadSpots();
+  }
+
+  Future<void> _loadCustomMarkers() async {
+    debugPrint('MapScreen: カスタムマーカーアイコン生成中...');
+    _communityFridgeIcon = await _createMarkerIcon(
+      Icons.kitchen,
+      Colors.blue,
+    );
+    _foodCollectionBoxIcon = await _createMarkerIcon(
+      Icons.food_bank,
+      Colors.green,
+    );
+    _donationBoxIcon = await _createMarkerIcon(
+      Icons.volunteer_activism,
+      Colors.orange,
+    );
+    debugPrint('MapScreen: カスタムマーカーアイコン生成完了');
+    setState(() {
+      _updateMarkers();
+    });
+  }
+
+  Future<BitmapDescriptor> _createMarkerIcon(
+    IconData iconData,
+    Color color,
+  ) async {
+    final pictureRecorder = ui.PictureRecorder();
+    final canvas = Canvas(pictureRecorder);
+    const size = 120.0;
+
+    // 背景の円を描画
+    final bgPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(
+      const Offset(size / 2, size / 2),
+      size / 2,
+      bgPaint,
+    );
+
+    // 白い外枠を描画
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4;
+    canvas.drawCircle(
+      const Offset(size / 2, size / 2),
+      size / 2 - 2,
+      borderPaint,
+    );
+
+    // アイコンを描画
+    final textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(iconData.codePoint),
+      style: TextStyle(
+        fontSize: 60,
+        fontFamily: iconData.fontFamily,
+        package: iconData.fontPackage,
+        color: Colors.white,
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        (size - textPainter.width) / 2,
+        (size - textPainter.height) / 2,
+      ),
+    );
+
+    // 画像に変換
+    final picture = pictureRecorder.endRecording();
+    final image = await picture.toImage(size.toInt(), size.toInt());
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    final bytes = byteData!.buffer.asUint8List();
+
+    return BitmapDescriptor.fromBytes(bytes);
   }
 
   Future<void> _requestLocationPermission() async {
@@ -92,11 +180,11 @@ class _MapScreenState extends State<MapScreen> {
   BitmapDescriptor _getMarkerIcon(SpotType type) {
     switch (type) {
       case SpotType.communityFridge:
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+        return _communityFridgeIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
       case SpotType.foodCollectionBox:
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+        return _foodCollectionBoxIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
       case SpotType.donationBox:
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+        return _donationBoxIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
     }
   }
 
