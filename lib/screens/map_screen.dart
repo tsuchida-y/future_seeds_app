@@ -137,7 +137,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  // ピンタップ時に表示するBottomSheet
+  // ピンタップ時に表示するBottomSheet（統合版）
   void _showSpotBottomSheet(Spot spot) {
     // カメラを選択されたマーカーに移動
     _mapController?.animateCamera(
@@ -155,7 +155,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  // BottomSheetのコンテンツ（簡易版）
+  // BottomSheetのコンテンツ（統合版：引き上げると詳細が見える）
   Widget _buildSpotBottomSheet(Spot spot) {
     return Container(
       decoration: const BoxDecoration(
@@ -165,7 +165,7 @@ class _MapScreenState extends State<MapScreen> {
       child: DraggableScrollableSheet(
         initialChildSize: 0.4,
         minChildSize: 0.3,
-        maxChildSize: 0.9,
+        maxChildSize: 0.8,
         expand: false,
         builder: (context, scrollController) => SingleChildScrollView(
           controller: scrollController,
@@ -190,10 +190,9 @@ class _MapScreenState extends State<MapScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-
-
-                    // タイトル行（名前とタイプバッジ） - 縦並び
+                    // ===== 簡易情報（初期表示） =====
+                    
+                    // タイトル行（名前とタイプバッジ）
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -338,59 +337,105 @@ class _MapScreenState extends State<MapScreen> {
 
                     const SizedBox(height: 24),
 
-                    // アクションボタン
-                    Row(
-                      children: [
-                        // ルート案内ボタン
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _openMapsApp(spot);
-                            },
-                            icon: const Icon(Icons.directions, size: 20),
-                            label: const Text(
-                              'ルート案内',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
+                    // ルート案内ボタン（フルサイズ）
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _openMapsApp(spot);
+                        },
+                        icon: const Icon(Icons.directions, size: 20),
+                        label: const Text(
+                          'ルート案内',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-
-                        const SizedBox(width: 12),
-
-                        // 詳細ボタン
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context); // 現在のBottomSheetを閉じる
-                              _showFullSpotDetail(spot); // 詳細画面を表示
-                            },
-                            icon: const Icon(Icons.info_outline, size: 20),
-                            label: const Text(
-                              '詳細を見る',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              side: const BorderSide(color: Colors.blue, width: 2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
 
-                    const SizedBox(height: 20),
+                    // ===== 詳細情報（スクロールして表示） =====
+                    
+                    const SizedBox(height: 32),
+                    
+                    // 区切り線
+                    Divider(color: Colors.grey[300], thickness: 1),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // 基本情報セクション
+                    const Text(
+                      '基本情報',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    _buildDetailInfoRow(Icons.location_on, '住所', spot.address),
+                    const SizedBox(height: 16),
+                    _buildDetailInfoRow(Icons.access_time, '受付時間', spot.openingHours),
+                    
+                    // 募集している食品（すべて表示）
+                    if (spot.neededItems.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      const Text(
+                        '募集している食品',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: spot.neededItems
+                            .map((item) => Chip(
+                                  label: Text(
+                                    item,
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  backgroundColor: Colors.green[50],
+                                  side: BorderSide(color: Colors.green[300]!),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ],
+                    
+                    // 説明
+                    if (spot.description != null && spot.description!.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      const Text(
+                        '詳細',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        spot.description!,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
+                    
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -416,187 +461,6 @@ class _MapScreenState extends State<MapScreen> {
         myLocationButtonEnabled: true,
         compassEnabled: true,
         mapToolbarEnabled: false,
-      ),
-    );
-  }
-
-  // 詳細画面（フルバージョン）
-  void _showFullSpotDetail(Spot spot) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ハンドルバー
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                
-                // スポット名
-                Text(
-                  spot.name,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                
-                // スポットタイプと距離
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getTypeColor(spot.type),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        spot.typeLabel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.route, size: 18, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      _calculateDistance(spot),
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const Divider(height: 32),
-                
-                // 基本情報セクション
-                const Text(
-                  '基本情報',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                _buildDetailInfoRow(Icons.location_on, '住所', spot.address),
-                const SizedBox(height: 12),
-                _buildDetailInfoRow(Icons.access_time, '受付時間', spot.openingHours),
-                
-                // 募集している食品
-                if (spot.neededItems.isNotEmpty) ...[
-                  const Divider(height: 32),
-                  const Text(
-                    '募集している食品',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: spot.neededItems
-                        .map((item) => Chip(
-                              label: Text(
-                                item,
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                              backgroundColor: Colors.green[50],
-                              side: BorderSide(color: Colors.green[300]!),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                ],
-                
-                // 説明
-                if (spot.description != null && spot.description!.isNotEmpty) ...[
-                  const Divider(height: 32),
-                  const Text(
-                    '詳細',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    spot.description!,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.6,
-                    ),
-                  ),
-                ],
-                
-                const SizedBox(height: 24),
-                
-                // ルート案内ボタン
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _openMapsApp(spot);
-                    },
-                    icon: const Icon(Icons.directions, size: 22),
-                    label: const Text(
-                      'ルート案内を開始',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
